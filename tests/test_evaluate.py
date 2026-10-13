@@ -1,3 +1,5 @@
+from typing import cast
+
 import pytest  # noqa: F401
 
 from query_builder_widget import evaluate
@@ -43,3 +45,9 @@ async def test_evaluation_ignorable_or():
     result = await evaluate(IGNORABLE_CONDITIONS_OR, {})
 
     assert result.passed, ", ".join(result.failures)
+
+
+async def test_evaluation_empty():
+    result = await evaluate(cast(QueryGroup, {}), {})
+
+    assert not result.passed

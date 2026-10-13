@@ -9,8 +9,11 @@ FieldHandler = Callable[[Any, str], bool | Awaitable[bool | tuple[bool, str | No
 
 
 async def evaluate(
-    node: QueryGroup | QueryRule, data: dict[str, Any | FieldHandler], field_labels: dict[str, str] | None = None
+    node: QueryGroup | QueryRule | None, data: dict[str, Any | FieldHandler], field_labels: dict[str, str] | None = None
 ) -> EvaluationResult:
+    if not node:
+        return EvaluationResult(False, ["An internal error occured: empty node"])
+
     field_labels = field_labels or {}
 
     if "rules" in node:
