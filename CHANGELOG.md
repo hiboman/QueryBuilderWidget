@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-10-20
+
+### Changed
+
+- Kept the legacy `fields` API and `rules` payload available for existing consumers.
+- Standardized the visible add action as “Add criteria”.
+
+### Added
+
+- Added the public `Criterion` definition and `QueryBuilderWidget(criteria=...)` API.
+- Added built-in text, number, date, select, and boolean value inputs.
+- Added a custom scalar input renderer registry for application-defined input types.
+- Added a flat `{"criteria": [...]}` payload and evaluator support with AND semantics.
+
 ## [1.2.2] - 2026-10-13
 
 ### Added

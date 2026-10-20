@@ -1,2 +1,3 @@
 from .evaluator import *  # noqa: F403
-from .widget import QueryBuilderWidget  # noqa: F401
+from .types import Criterion
+from .widget import QueryBuilderWidget

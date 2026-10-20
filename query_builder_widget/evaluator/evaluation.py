@@ -6,15 +6,37 @@ from ..types import EvaluationResult, QueryGroup, QueryRule
 from .operators import describe_failure, use_operator
 
 FieldHandler = Callable[[Any, str], bool | Awaitable[bool | tuple[bool, str | None]]]
+OperatorHandler = Callable[[Any, Any], bool | Awaitable[bool]]
 
 
 async def evaluate(
-    node: QueryGroup | QueryRule | None, data: dict[str, Any | FieldHandler], field_labels: dict[str, str] | None = None
+    node: QueryGroup | QueryRule | dict[str, Any] | None,
+    data: dict[str, Any | FieldHandler],
+    field_labels: dict[str, str] | None = None,
+    operator_handlers: dict[str, OperatorHandler] | None = None,
 ) -> EvaluationResult:
     if not node:
         return EvaluationResult(False, ["An internal error occured: empty node"])
 
     field_labels = field_labels or {}
+    operator_handlers = operator_handlers or {}
+
+    if "criteria" in node:
+        criteria = cast(list[dict[str, Any]], node["criteria"])
+        if not criteria:
+            return EvaluationResult(True, [])
+        normalized = [
+            {
+                "field": criterion.get("criterion", criterion.get("field", "")),
+                "operator": criterion.get("operator", ""),
+                "value": criterion.get("value", ""),
+            }
+            for criterion in criteria
+        ]
+        results = [await evaluate(rule, data, field_labels, operator_handlers) for rule in normalized]
+        if all(result.passed for result in results):
+            return EvaluationResult(True, [])
+        return EvaluationResult(False, [reason for result in results for reason in result.failures])
 
     if "rules" in node:
         node = cast(QueryGroup, node)
@@ -22,7 +44,7 @@ async def evaluate(
         if not node["rules"]:
             return EvaluationResult(True, [])
 
-        results = [await evaluate(rule, data, field_labels) for rule in node["rules"]]
+        results = [await evaluate(rule, data, field_labels, operator_handlers) for rule in node["rules"]]
 
         passed = (
             all(result.passed for result in results)
@@ -49,6 +71,9 @@ async def evaluate(
             failure_message = final_result[1]
         else:
             passed = final_result
+    elif operator_name in operator_handlers:
+        custom_result = operator_handlers[operator_name](value, expected)
+        passed = await custom_result if isawaitable(custom_result) else custom_result
     else:
         passed = use_operator(operator_name, value, expected)
 
